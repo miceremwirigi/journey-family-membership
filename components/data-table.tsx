@@ -14,13 +14,13 @@ export interface Column<T> {
   render?: (item: T, index: number) => ReactNode
 }
 
-interface DataTableProps<T extends Record<string, unknown>> {
+interface DataTableProps<T extends Record<string, any>> {
   columns: Column<T>[]
   data: T[]
   emptyMessage?: string
 }
 
-export function DataTable<T extends Record<string, unknown>>({
+export function DataTable<T extends Record<string, any>>({
   columns,
   data,
   emptyMessage = "No data found",
@@ -50,7 +50,7 @@ export function DataTable<T extends Record<string, unknown>>({
             <TableRow key={rowIndex} className="hover:bg-muted/50">
               {columns.map((column) => (
                 <TableCell key={`${rowIndex}-${column.key}`}>
-                  {column.render ? column.render(row, rowIndex) : (String(row[column.key]) || "-")}
+                  {column.render ? column.render(row, rowIndex) : (String(row[column.key] as any) || "-")}
                 </TableCell>
               ))}
             </TableRow>

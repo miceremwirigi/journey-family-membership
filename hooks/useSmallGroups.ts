@@ -3,7 +3,17 @@ import { getSmallGroups, createSmallGroup, updateSmallGroup, deleteSmallGroup, t
 import { smallGroups as mockSmallGroups } from '@/lib/mock-data';
 import { useApi } from './useApi';
 
-export function useSmallGroups() {
+interface UseSmallGroupsState {
+  groups: SmallGroup[];
+  loading: boolean;
+  error: Error | null;
+  isUsingFallback: boolean;
+  addGroup: (group: Omit<SmallGroup, 'id'>) => Promise<SmallGroup>;
+  updateGroupData: (id: string, data: Partial<SmallGroup>) => Promise<SmallGroup>;
+  removeGroup: (id: string) => Promise<void>;
+}
+
+export function useSmallGroups(): UseSmallGroupsState {
   const { data, loading, error, isUsingFallback } = useApi<SmallGroup[]>(
     '/small-groups',
     mockSmallGroups as SmallGroup[]
@@ -23,7 +33,7 @@ export function useSmallGroups() {
       } catch (err) {
         const localGroup = {
           ...groupData,
-          id: Math.random(),
+          id: `temp-${Math.random()}`,
         } as SmallGroup;
         setGroups((prev) => [...prev, localGroup]);
         throw err;
@@ -33,7 +43,7 @@ export function useSmallGroups() {
   );
 
   const updateGroupData = useCallback(
-    async (id: number | string, data: Partial<SmallGroup>) => {
+    async (id: string, data: Partial<SmallGroup>) => {
       try {
         const updated = await updateSmallGroup(id, data);
         setGroups((prev) =>
@@ -51,7 +61,7 @@ export function useSmallGroups() {
   );
 
   const removeGroup = useCallback(
-    async (id: number | string) => {
+    async (id: string) => {
       try {
         await deleteSmallGroup(id);
         setGroups((prev) => prev.filter((g) => g.id !== id));

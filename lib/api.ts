@@ -26,7 +26,7 @@ export interface LoginResponse {
 }
 
 export interface Member {
-  id?: string;
+  id: string;
   firstName: string;
   middleName: string;
   lastName: string;
@@ -48,17 +48,18 @@ export interface Member {
 }
 
 export interface Family {
-  id?: string;
+  id: string;
   name: string;
   headId: string;
-  members: {
+  // CHANGED: members is now a simple array of { memberId, role } instead of full Member objects
+  members?: {
     memberId: string;
     role: string;
   }[];
 }
 
 export interface SmallGroup {
-  id?: string;
+  id: string;
   name: string;
   zone: string;
   location: string;
@@ -66,11 +67,12 @@ export interface SmallGroup {
   description?: string;
   meetingDay?: string;
   meetingTime?: string;
-  memberIds: string[];
+  // CHANGED: memberIds instead of members array
+  memberIds?: string[];
 }
 
 export interface Visitor {
-  id?: string;
+  id: string;
   firstName: string;
   middleName: string;
   lastName: string;
@@ -85,7 +87,7 @@ export interface Visitor {
 }
 
 export interface Message {
-  id?: string;
+  id: string;
   date: string;
   time: string;
   type: 'sms' | 'whatsapp';
@@ -95,7 +97,7 @@ export interface Message {
 }
 
 export interface Event {
-  id?: string;
+  id: string;
   title: string;
   category: string;
   dateTime: string;

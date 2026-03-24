@@ -3,7 +3,17 @@ import { getFamilies, createFamily, updateFamily, deleteFamily, type Family } fr
 import { families as mockFamilies } from '@/lib/mock-data';
 import { useApi } from './useApi';
 
-export function useFamilies() {
+interface UseFamiliesState {
+  families: Family[];
+  loading: boolean;
+  error: Error | null;
+  isUsingFallback: boolean;
+  addFamily: (family: Omit<Family, 'id'>) => Promise<Family>;
+  updateFamilyData: (id: string, data: Partial<Family>) => Promise<Family>;
+  removeFamily: (id: string) => Promise<void>;
+}
+
+export function useFamilies(): UseFamiliesState {
   const { data, loading, error, isUsingFallback } = useApi<Family[]>(
     '/families',
     mockFamilies as Family[]
@@ -23,7 +33,7 @@ export function useFamilies() {
       } catch (err) {
         const localFamily = {
           ...familyData,
-          id: Math.random(),
+          id: `temp-${Math.random()}`,
         } as Family;
         setFamilies((prev) => [...prev, localFamily]);
         throw err;
@@ -33,7 +43,7 @@ export function useFamilies() {
   );
 
   const updateFamilyData = useCallback(
-    async (id: number | string, data: Partial<Family>) => {
+    async (id: string, data: Partial<Family>) => {
       try {
         const updated = await updateFamily(id, data);
         setFamilies((prev) =>
@@ -51,7 +61,7 @@ export function useFamilies() {
   );
 
   const removeFamily = useCallback(
-    async (id: number | string) => {
+    async (id: string) => {
       try {
         await deleteFamily(id);
         setFamilies((prev) => prev.filter((f) => f.id !== id));

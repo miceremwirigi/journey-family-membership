@@ -9,8 +9,8 @@ interface UseMembersState {
   error: Error | null;
   isUsingFallback: boolean;
   addMember: (member: Omit<Member, 'id'>) => Promise<Member>;
-  updateMemberData: (id: number | string, data: Partial<Member>) => Promise<Member>;
-  removeMember: (id: number | string) => Promise<void>;
+  updateMemberData: (id: string, data: Partial<Member>) => Promise<Member>;
+  removeMember: (id: string) => Promise<void>;
   refetch: () => void;
 }
 
@@ -37,7 +37,7 @@ export function useMembers(): UseMembersState {
         // Still add to local state for optimistic update
         const localMember = {
           ...memberData,
-          id: Math.random(),
+          id: `temp-${Math.random()}`,
         } as Member;
         setMembers((prev) => [...prev, localMember]);
         throw err;
@@ -47,7 +47,7 @@ export function useMembers(): UseMembersState {
   );
 
   const updateMemberData = useCallback(
-    async (id: number | string, data: Partial<Member>) => {
+    async (id: string, data: Partial<Member>) => {
       try {
         const updated = await updateMember(id, data);
         setMembers((prev) =>
@@ -67,7 +67,7 @@ export function useMembers(): UseMembersState {
   );
 
   const removeMember = useCallback(
-    async (id: number | string) => {
+    async (id: string) => {
       try {
         await deleteMember(id);
         setMembers((prev) => prev.filter((m) => m.id !== id));
