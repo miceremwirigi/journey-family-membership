@@ -25,7 +25,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Upload, Pencil, Trash2, Phone, Link2, QrCode, Copy, CheckCircle2 } from "lucide-react"
-import { members, zones, smallGroups, families, getFullName, Member } from "@/lib/mock-data"
+import { zones, smallGroups as mockSmallGroups, families as mockFamilies, getFullName, Member } from "@/lib/mock-data"
+import { useMembers } from "@/hooks/useMembers"
 
 const zoneColors: Record<string, string> = {
   "North Zone": "bg-amber-100 text-amber-800",
@@ -36,6 +37,7 @@ const zoneColors: Record<string, string> = {
 }
 
 export default function MembersPage() {
+  const { members, loading, error, isUsingFallback } = useMembers()
   const [zoneFilter, setZoneFilter] = useState<string>("all")
   const [groupFilter, setGroupFilter] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
@@ -66,12 +68,12 @@ export default function MembersPage() {
 
   const getMemberSmallGroup = (member: Member) => {
     if (!member.smallGroupId) return null
-    return smallGroups.find((sg) => sg.id === member.smallGroupId)
+    return mockSmallGroups.find((sg) => sg.id === member.smallGroupId)
   }
 
   const getMemberFamily = (member: Member) => {
     if (!member.familyId) return null
-    return families.find((f) => f.id === member.familyId)
+    return mockFamilies.find((f) => f.id === member.familyId)
   }
 
   const columns: Column<Member>[] = [
@@ -155,6 +157,19 @@ export default function MembersPage() {
     },
   ]
 
+  if (loading) {
+    return (
+      <DashboardLayout title="Church Members">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading members...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   return (
     <DashboardLayout
       title="Church Members"
@@ -163,6 +178,11 @@ export default function MembersPage() {
       onSearch={setSearchQuery}
       actions={
         <div className="flex items-center gap-2">
+          {isUsingFallback && (
+            <Badge variant="outline" className="bg-yellow-50 text-yellow-800 border-yellow-200">
+              Using Sample Data
+            </Badge>
+          )}
           <Dialog open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">
@@ -315,8 +335,8 @@ export default function MembersPage() {
                       <SelectValue placeholder="Select small group (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">None</SelectItem>
-                      {smallGroups.map((sg) => (
+                      <SelectItem value="">None</SelectItem>
+                      {mockSmallGroups.map((sg) => (
                         <SelectItem key={sg.id} value={sg.id}>
                           {sg.name} ({sg.location})
                         </SelectItem>
@@ -353,6 +373,12 @@ export default function MembersPage() {
         </div>
       }
     >
+      {error && !isUsingFallback && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-800 text-sm">Error loading members: {error.message}</p>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-2">
@@ -379,7 +405,7 @@ export default function MembersPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Groups</SelectItem>
-              {smallGroups.map((sg) => (
+              {mockSmallGroups.map((sg) => (
                 <SelectItem key={sg.id} value={sg.id}>
                   {sg.name}
                 </SelectItem>

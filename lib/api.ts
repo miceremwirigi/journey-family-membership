@@ -1,21 +1,23 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
-interface ApiResponse<T = unknown> {
+// ============= Type Definitions =============
+
+export interface ApiResponse<T = unknown> {
   token?: string;
   data?: T;
   error?: string;
   message?: string;
 }
 
-interface LoginCredentials {
+export interface LoginCredentials {
   email: string;
   password: string;
 }
 
-interface LoginResponse {
+export interface LoginResponse {
   token: string;
   member?: {
-    id: number;
+    id: string;
     email: string;
     firstName: string;
     lastName: string;
@@ -23,8 +25,8 @@ interface LoginResponse {
   };
 }
 
-interface Member {
-  id?: number;
+export interface Member {
+  id?: string;
   firstName: string;
   middleName: string;
   lastName: string;
@@ -38,34 +40,37 @@ interface Member {
   weddingAnniversary?: string;
   specialCelebration?: string;
   specialCelebrationDescription?: string;
-  familyId?: number;
+  familyId?: string;
   familyRole?: string;
-  smallGroupId?: number;
+  smallGroupId?: string;
   joinDate?: string;
   role?: string;
 }
 
-interface Family {
-  id?: number;
+export interface Family {
+  id?: string;
   name: string;
-  headId: number;
-  members?: Member[];
+  headId: string;
+  members: {
+    memberId: string;
+    role: string;
+  }[];
 }
 
-interface SmallGroup {
-  id?: number;
+export interface SmallGroup {
+  id?: string;
   name: string;
   zone: string;
   location: string;
-  leaderId?: number;
+  leaderId?: string;
   description?: string;
   meetingDay?: string;
   meetingTime?: string;
-  members?: Member[];
+  memberIds: string[];
 }
 
-interface Visitor {
-  id?: number;
+export interface Visitor {
+  id?: string;
   firstName: string;
   middleName: string;
   lastName: string;
@@ -79,8 +84,8 @@ interface Visitor {
   status: 'Not Contacted' | 'Contacted' | 'Follow Up';
 }
 
-interface Message {
-  id?: number;
+export interface Message {
+  id?: string;
   date: string;
   time: string;
   type: 'sms' | 'whatsapp';
@@ -89,8 +94,8 @@ interface Message {
   delivered: number;
 }
 
-interface Event {
-  id?: number;
+export interface Event {
+  id?: string;
   title: string;
   category: string;
   dateTime: string;
@@ -98,11 +103,13 @@ interface Event {
   status: 'Upcoming' | 'Ongoing' | 'Completed' | 'Cancelled';
 }
 
+// ============= API Call Function =============
+
 export async function apiCall<T>(
   endpoint: string,
   options?: RequestInit
 ): Promise<T> {
-  const token = localStorage.getItem('token');
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -113,29 +120,34 @@ export async function apiCall<T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
 
-  if (!response.ok) {
-    let errorMessage = `API error: ${response.statusText}`;
-    
-    try {
-      const errorData = await response.json() as Record<string, unknown>;
-      if (typeof errorData.message === 'string') {
-        errorMessage = errorData.message;
-      } else if (typeof errorData.error === 'string') {
-        errorMessage = errorData.error;
+    if (!response.ok) {
+      let errorMessage = `API error: ${response.statusText}`;
+      
+      try {
+        const errorData = await response.json() as Record<string, unknown>;
+        if (typeof errorData.message === 'string') {
+          errorMessage = errorData.message;
+        } else if (typeof errorData.error === 'string') {
+          errorMessage = errorData.error;
+        }
+      } catch {
+        // If JSON parsing fails, use default error message
       }
-    } catch {
-      // If JSON parsing fails, use default error message
+      
+      throw new Error(errorMessage);
     }
-    
-    throw new Error(errorMessage);
-  }
 
-  return response.json() as Promise<T>;
+    return response.json() as Promise<T>;
+  } catch (error) {
+    // Re-throw to be caught by hooks
+    throw error;
+  }
 }
 
 // ============= Authentication =============
@@ -161,7 +173,7 @@ export function logout(): void {
 }
 
 export function getStoredToken(): string | null {
-  return localStorage.getItem('token');
+  return typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 }
 
 // ============= Members =============
@@ -170,7 +182,7 @@ export async function getMembers(): Promise<Member[]> {
   return apiCall<Member[]>('/members');
 }
 
-export async function getMember(id: number | string): Promise<Member> {
+export async function getMember(id: string): Promise<Member> {
   return apiCall<Member>(`/members/${id}`);
 }
 
@@ -182,7 +194,7 @@ export async function createMember(data: Omit<Member, 'id'>): Promise<Member> {
 }
 
 export async function updateMember(
-  id: number | string,
+  id: string,
   data: Partial<Member>
 ): Promise<Member> {
   return apiCall<Member>(`/members/${id}`, {
@@ -191,7 +203,7 @@ export async function updateMember(
   });
 }
 
-export async function deleteMember(id: number | string): Promise<void> {
+export async function deleteMember(id: string): Promise<void> {
   await apiCall<void>(`/members/${id}`, {
     method: 'DELETE',
   });
@@ -203,7 +215,7 @@ export async function getFamilies(): Promise<Family[]> {
   return apiCall<Family[]>('/families');
 }
 
-export async function getFamily(id: number | string): Promise<Family> {
+export async function getFamily(id: string): Promise<Family> {
   return apiCall<Family>(`/families/${id}`);
 }
 
@@ -217,7 +229,7 @@ export async function createFamily(
 }
 
 export async function updateFamily(
-  id: number | string,
+  id: string,
   data: Partial<Family>
 ): Promise<Family> {
   return apiCall<Family>(`/families/${id}`, {
@@ -226,7 +238,7 @@ export async function updateFamily(
   });
 }
 
-export async function deleteFamily(id: number | string): Promise<void> {
+export async function deleteFamily(id: string): Promise<void> {
   await apiCall<void>(`/families/${id}`, {
     method: 'DELETE',
   });
@@ -238,7 +250,7 @@ export async function getSmallGroups(): Promise<SmallGroup[]> {
   return apiCall<SmallGroup[]>('/small-groups');
 }
 
-export async function getSmallGroup(id: number | string): Promise<SmallGroup> {
+export async function getSmallGroup(id: string): Promise<SmallGroup> {
   return apiCall<SmallGroup>(`/small-groups/${id}`);
 }
 
@@ -252,7 +264,7 @@ export async function createSmallGroup(
 }
 
 export async function updateSmallGroup(
-  id: number | string,
+  id: string,
   data: Partial<SmallGroup>
 ): Promise<SmallGroup> {
   return apiCall<SmallGroup>(`/small-groups/${id}`, {
@@ -261,7 +273,7 @@ export async function updateSmallGroup(
   });
 }
 
-export async function deleteSmallGroup(id: number | string): Promise<void> {
+export async function deleteSmallGroup(id: string): Promise<void> {
   await apiCall<void>(`/small-groups/${id}`, {
     method: 'DELETE',
   });
@@ -273,7 +285,7 @@ export async function getVisitors(): Promise<Visitor[]> {
   return apiCall<Visitor[]>('/visitors');
 }
 
-export async function getVisitor(id: number | string): Promise<Visitor> {
+export async function getVisitor(id: string): Promise<Visitor> {
   return apiCall<Visitor>(`/visitors/${id}`);
 }
 
@@ -287,7 +299,7 @@ export async function createVisitor(
 }
 
 export async function updateVisitor(
-  id: number | string,
+  id: string,
   data: Partial<Visitor>
 ): Promise<Visitor> {
   return apiCall<Visitor>(`/visitors/${id}`, {
@@ -296,7 +308,7 @@ export async function updateVisitor(
   });
 }
 
-export async function deleteVisitor(id: number | string): Promise<void> {
+export async function deleteVisitor(id: string): Promise<void> {
   await apiCall<void>(`/visitors/${id}`, {
     method: 'DELETE',
   });
@@ -308,7 +320,7 @@ export async function getMessages(): Promise<Message[]> {
   return apiCall<Message[]>('/messages');
 }
 
-export async function getMessage(id: number | string): Promise<Message> {
+export async function getMessage(id: string): Promise<Message> {
   return apiCall<Message>(`/messages/${id}`);
 }
 
@@ -322,7 +334,7 @@ export async function createMessage(
 }
 
 export async function updateMessage(
-  id: number | string,
+  id: string,
   data: Partial<Message>
 ): Promise<Message> {
   return apiCall<Message>(`/messages/${id}`, {
@@ -331,7 +343,7 @@ export async function updateMessage(
   });
 }
 
-export async function deleteMessage(id: number | string): Promise<void> {
+export async function deleteMessage(id: string): Promise<void> {
   await apiCall<void>(`/messages/${id}`, {
     method: 'DELETE',
   });
@@ -343,7 +355,7 @@ export async function getEvents(): Promise<Event[]> {
   return apiCall<Event[]>('/events');
 }
 
-export async function getEvent(id: number | string): Promise<Event> {
+export async function getEvent(id: string): Promise<Event> {
   return apiCall<Event>(`/events/${id}`);
 }
 
@@ -355,7 +367,7 @@ export async function createEvent(data: Omit<Event, 'id'>): Promise<Event> {
 }
 
 export async function updateEvent(
-  id: number | string,
+  id: string,
   data: Partial<Event>
 ): Promise<Event> {
   return apiCall<Event>(`/events/${id}`, {
@@ -364,7 +376,7 @@ export async function updateEvent(
   });
 }
 
-export async function deleteEvent(id: number | string): Promise<void> {
+export async function deleteEvent(id: string): Promise<void> {
   await apiCall<void>(`/events/${id}`, {
     method: 'DELETE',
   });
