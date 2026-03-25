@@ -27,7 +27,7 @@ export interface Family {
   headId: string
   members: {
     memberId: string
-    role: string // husband, wife, son, daughter, grandchild, niece, nephew, etc.
+    role: string
   }[]
 }
 

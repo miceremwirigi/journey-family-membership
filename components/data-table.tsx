@@ -1,5 +1,4 @@
-"use client"
-
+import { ReactNode } from "react"
 import {
   Table,
   TableBody,
@@ -11,60 +10,51 @@ import {
 
 export interface Column<T> {
   key: string
-  header: string
-  render?: (item: T) => React.ReactNode
-  className?: string
+  header: string | ReactNode
+  render?: (item: T, index: number) => ReactNode
 }
 
-interface DataTableProps<T> {
+interface DataTableProps<T extends Record<string, any>> {
   columns: Column<T>[]
   data: T[]
   emptyMessage?: string
 }
 
-export function DataTable<T extends Record<string, unknown>>({
+export function DataTable<T extends Record<string, any>>({
   columns,
   data,
   emptyMessage = "No data found",
 }: DataTableProps<T>) {
+  if (data.length === 0) {
+    return (
+      <div className="rounded-lg border border-border bg-card p-8 text-center">
+        <p className="text-muted-foreground">{emptyMessage}</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="rounded-lg border border-border bg-card">
+    <div className="rounded-lg border border-border overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow className="hover:bg-transparent">
+          <TableRow className="bg-muted/50">
             {columns.map((column) => (
-              <TableHead
-                key={column.key}
-                className={`text-xs font-medium uppercase text-muted-foreground ${column.className || ""}`}
-              >
+              <TableHead key={column.key} className="font-semibold">
                 {column.header}
               </TableHead>
             ))}
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={columns.length}
-                className="h-24 text-center text-muted-foreground"
-              >
-                {emptyMessage}
-              </TableCell>
+          {data.map((row, rowIndex) => (
+            <TableRow key={rowIndex} className="hover:bg-muted/50">
+              {columns.map((column) => (
+                <TableCell key={`${rowIndex}-${column.key}`}>
+                  {column.render ? column.render(row, rowIndex) : (String(row[column.key] as any) || "-")}
+                </TableCell>
+              ))}
             </TableRow>
-          ) : (
-            data.map((item, index) => (
-              <TableRow key={index} className="border-border">
-                {columns.map((column) => (
-                  <TableCell key={column.key} className={column.className}>
-                    {column.render
-                      ? column.render(item)
-                      : (item[column.key] as React.ReactNode)}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          )}
+          ))}
         </TableBody>
       </Table>
     </div>
