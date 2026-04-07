@@ -7,10 +7,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { cn } from "@/lib/utils"
 
 export interface Column<T> {
   key: string
   header: string | ReactNode
+  className?: string
   render?: (item: T, index: number) => ReactNode
 }
 
@@ -39,7 +41,7 @@ export function DataTable<T extends Record<string, any>>({
         <TableHeader>
           <TableRow className="bg-muted/50">
             {columns.map((column) => (
-              <TableHead key={column.key} className="font-semibold">
+              <TableHead key={column.key} className={cn("font-semibold", column.className)}>
                 {column.header}
               </TableHead>
             ))}
@@ -49,7 +51,7 @@ export function DataTable<T extends Record<string, any>>({
           {data.map((row, rowIndex) => (
             <TableRow key={rowIndex} className="hover:bg-muted/50">
               {columns.map((column) => (
-                <TableCell key={`${rowIndex}-${column.key}`}>
+                <TableCell key={`${rowIndex}-${column.key}`} className={column.className}>
                   {column.render ? column.render(row, rowIndex) : (String(row[column.key] as any) || "-")}
                 </TableCell>
               ))}

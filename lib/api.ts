@@ -1,3 +1,4 @@
+import Cookies from "js-cookie";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3002/api';
 
 // ============= Type Definitions =============
@@ -111,14 +112,14 @@ export async function apiCall<T>(
   endpoint: string,
   options?: RequestInit
 ): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token = typeof window !== 'undefined' ? Cookies.get('token') : null;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(options?.headers as Record<string, string>),
+    ...((options?.headers as Record<string, string>)||{}),
   };
 
-  if (token) {
+  if (token && !headers['Authorization']) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
@@ -162,20 +163,22 @@ export async function login(
     body: JSON.stringify(credentials),
   });
 
-  // Store token in localStorage
+  // Store token in cookie
   if (data.token) {
-    localStorage.setItem('token', data.token);
+    Cookies.set('token', data.token, {expires: 1, sameSite: 'strict', secure: true}); // expires in 1 day
   }
 
   return data;
 }
 
 export function logout(): void {
-  localStorage.removeItem('token');
+  Cookies.remove('token');
+  window.location.href = '/login';
 }
 
 export function getStoredToken(): string | null {
-  return typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const token = typeof window !== 'undefined' ? Cookies.get('token') : null;
+  return token || null;
 }
 
 // ============= Members =============
